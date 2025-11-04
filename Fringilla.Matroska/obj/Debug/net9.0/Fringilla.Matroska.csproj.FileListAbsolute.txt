@@ -1,4 +1,0 @@
-F:\MKVToolSharp\Fringilla.Matroska\obj\Debug\net9.0\Fringilla.Matroska.GeneratedMSBuildEditorConfig.editorconfig
-F:\MKVToolSharp\Fringilla.Matroska\obj\Debug\net9.0\Fringilla.Matroska.AssemblyInfoInputs.cache
-F:\MKVToolSharp\Fringilla.Matroska\obj\Debug\net9.0\Fringilla.Matroska.AssemblyInfo.cs
-F:\MKVToolSharp\Fringilla.Matroska\obj\Debug\net9.0\Fringilla.Matroska.csproj.CoreCompileInputs.cache
