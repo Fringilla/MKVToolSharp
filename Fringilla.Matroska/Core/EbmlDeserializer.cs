@@ -50,8 +50,9 @@ public sealed class EbmlDeserializer
                 continue;
             }
 
-            var propType = prop.PropertyType;
-            if (propType == typeof(string) || propType == typeof(string?))
+            // var propType = prop.PropertyType;
+            Type propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (propType == typeof(string))
             {
                 var str = Encoding.UTF8.GetString(content);
                 prop.SetValue(target, str);
@@ -64,7 +65,7 @@ public sealed class EbmlDeserializer
                 continue;
             }
 
-            if (propType == typeof(ulong) || propType == typeof(ulong?))
+            if (propType == typeof(ulong))
             {
                 ulong v = EbmlBinary.BytesToUlong(content);
                 prop.SetValue(target, v);
@@ -104,7 +105,7 @@ public sealed class EbmlDeserializer
             }
 
             // fallback for ints
-            if (propType == typeof(int) || propType == typeof(int?))
+            if (propType == typeof(int))
             {
                 var v = (int)EbmlBinary.BytesToUlong(content);
                 prop.SetValue(target, v);
