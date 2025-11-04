@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "OEK/25IqqUs=",
+  "success": true,
+  "projectFilePath": "F:\\MKVToolSharp\\Fringilla.Matroska\\Fringilla.Matroska.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\patri\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.10\\microsoft.netcore.app.ref.9.0.10.nupkg.sha512",
+    "C:\\Users\\patri\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.10\\microsoft.windowsdesktop.app.ref.9.0.10.nupkg.sha512",
+    "C:\\Users\\patri\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.10\\microsoft.aspnetcore.app.ref.9.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}
