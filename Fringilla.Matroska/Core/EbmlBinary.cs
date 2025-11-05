@@ -68,9 +68,11 @@ internal static class EbmlBinary
     {
         // we assume id fits in 1..4 bytes; choose minimal bytes representing id
         if (id <= 0xFF) return new byte[] { (byte)id };
-        else if (id <= 0xFFFF) return new byte[] { (byte)(id >> 8), (byte)id };
-        else if (id <= 0xFFFFFF) return new byte[] { (byte)(id >> 16), (byte)(id >> 8), (byte)id };
-        else return new byte[] { (byte)(id >> 24), (byte)(id >> 16), (byte)(id >> 8), (byte)id };
+        if (id <= 0xFFFF) return new byte[] { (byte)(id >> 8), (byte)id };
+        if (id <= 0xFFFFFF) return new byte[] { (byte)(id >> 16), (byte)(id >> 8), (byte)id };
+        if (id <= 0xFFFFFFFF) return new byte[] { (byte)(id >> 24), (byte)(id >> 16), (byte)(id >> 8), (byte)id };
+
+        throw new ArgumentOutOfRangeException(nameof(id), $"Element ID {id:X} exceeds 4 bytes limit");
     }
 
     public static ulong BytesToUlong(ReadOnlySpan<byte> bytes)
