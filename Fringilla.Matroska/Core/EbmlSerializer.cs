@@ -1,139 +1,145 @@
 ﻿namespace Fringilla.Matroska;
 
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Collections;
-using System.Collections.Generic;
+using System.Buffers.Binary;
 
-public sealed class EbmlSerializer
+/// <summary>
+/// Serializes Matroska/EBML elements to a stream using reflection and [EbmlElement] attributes.
+/// </summary>
+public static class EbmlSerializer
 {
-    public void Serialize<T>(Stream s, T element) where T : MatroskaElement
+    /// <summary>
+    /// Serializes a Matroska element into the specified stream.
+    /// </summary>
+    public static void Serialize(Stream stream, object element)
     {
-        var type = element!.GetType();
-        var attr = type.GetCustomAttribute<EbmlElementAttribute>();
-        if (attr == null) throw new InvalidOperationException("Type missing EbmlElement attribute");
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        if (element is null) throw new ArgumentNullException(nameof(element));
 
-        using var ms = new MemoryStream();
-        // write content into ms first
-        WriteObjectContent(ms, element);
-        // element header
-        EbmlBinary.WriteElementHeader(s, attr.Id, (ulong)ms.Length);
-        ms.Position = 0;
-        ms.CopyTo(s);
+        WriteMasterElement(stream, element);
     }
 
-    private void WriteObjectContent(Stream s, object obj)
+    private static void WriteMasterElement(Stream stream, object element)
     {
-        var props = obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                     .Where(p => p.GetCustomAttribute<EbmlElementAttribute>() != null)
-                     .OrderBy(p => p.MetadataToken); // stable order, not spec-order but ok for PoC
+        var elementType = element.GetType();
+        var elementAttr = elementType.GetCustomAttribute<EbmlElementAttribute>()
+            ?? throw new InvalidOperationException($"Type {elementType.FullName} is missing [EbmlElement].");
 
-        foreach (var p in props)
+        using var temp = new MemoryStream();
+        WriteObjectContent(temp, element);
+        var contentBytes = temp.ToArray();
+
+        EbmlBinary.WriteElementHeader(stream, elementAttr.Id, (ulong)contentBytes.Length);
+        stream.Write(contentBytes, 0, contentBytes.Length);
+    }
+
+    private static void WriteObjectContent(Stream stream, object element)
+    {
+        var props = element.GetType()
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Select(p => new
+            {
+                Property = p,
+                Attribute = p.GetCustomAttribute<EbmlElementAttribute>()
+            })
+            .Where(x => x.Attribute != null)
+            .OrderBy(x => x.Attribute!.Order)
+            .ToList();
+
+        foreach (var (property, attr) in props)
         {
-            var pAttr = p.GetCustomAttribute<EbmlElementAttribute>()!;
-            var val = p.GetValue(obj);
-            if (val == null) continue;
-
-            if (val is string str)
-            {
-                var bytes = Encoding.UTF8.GetBytes(str);
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)bytes.Length);
-                s.Write(bytes, 0, bytes.Length);
+            var val = property.GetValue(element);
+            if (val is null)
                 continue;
-            }
 
-            if (val is ulong u64)
+            switch (val)
             {
-                // write as big-endian integer with minimal bytes
-                var bytes = UlongToMinimalBytes(u64);
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)bytes.Length);
-                s.Write(bytes, 0, bytes.Length);
-                continue;
-            }
+                // --- Primitive numeric types ---
+                case int i32:
+                    WriteInteger(stream, attr!, (ulong)i32);
+                    break;
+                case long i64:
+                    WriteInteger(stream, attr!, (ulong)i64);
+                    break;
+                case uint u32:
+                    WriteInteger(stream, attr!, u32);
+                    break;
+                case ulong u64:
+                    WriteInteger(stream, attr!, u64);
+                    break;
+                case short i16:
+                    WriteInteger(stream, attr!, (ulong)i16);
+                    break;
+                case byte b:
+                    WriteInteger(stream, attr!, b);
+                    break;
 
-            if (val is int i32)
-            {
-                var bytes = UlongToMinimalBytes((ulong)i32);
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)bytes.Length);
-                s.Write(bytes, 0, bytes.Length);
-                continue;
-            }
+                // --- Floating point ---
+                case float f:
+                    WriteFloat(stream, attr!, f);
+                    break;
+                case double d:
+                    WriteFloat(stream, attr!, d);
+                    break;
 
-            if (val is double d)
-            {
-                var buf = BitConverter.GetBytes(d);
-                if (BitConverter.IsLittleEndian) Array.Reverse(buf);
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)buf.Length);
-                s.Write(buf, 0, buf.Length);
-                continue;
-            }
+                // --- Strings ---
+                case string s when !string.IsNullOrEmpty(s):
+                    WriteString(stream, attr!, s);
+                    break;
 
-            if (val is byte[] bin)
-            {
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)bin.Length);
-                s.Write(bin, 0, bin.Length);
-                continue;
-            }
+                // --- Collections ---
+                case IEnumerable enumerable and not string:
+                    foreach (var child in enumerable.Cast<object>().Where(o => o != null))
+                        WriteMasterElement(stream, child);
+                    break;
 
-            // IEnumerable -> list of master elements
-            if (val is IEnumerable ie && !(val is string))
-            {
-                foreach (var child in ie)
-                {
-                    WriteMasterElement(s, child);
-                }
-                continue;
+                // --- Nested EBML element ---
+                default:
+                    if (property.PropertyType.GetCustomAttribute<EbmlElementAttribute>() != null)
+                        WriteMasterElement(stream, val);
+                    else
+                        throw new NotSupportedException($"Unsupported property type: {property.PropertyType.FullName}");
+                    break;
             }
-
-            // single nested master element
-            if (HasEbmlAttr(val!.GetType()))
-            {
-                WriteMasterElement(s, val!);
-                continue;
-            }
-
-            // fallback: try to handle as uinteger if numeric
-            var tCode = Type.GetTypeCode(val!.GetType());
-            if (tCode == TypeCode.UInt64 || tCode == TypeCode.UInt32 || tCode == TypeCode.Int32)
-            {
-                var bytes = UlongToMinimalBytes(Convert.ToUInt64(val));
-                EbmlBinary.WriteElementHeader(s, pAttr.Id, (ulong)bytes.Length);
-                s.Write(bytes, 0, bytes.Length);
-                continue;
-            }
-
-            throw new NotSupportedException($"Property type {p.PropertyType} not supported");
         }
     }
 
-    private static bool HasEbmlAttr(Type t) => t.GetCustomAttribute<EbmlElementAttribute>() != null;
-
-    private void WriteMasterElement(Stream s, object child)
+    private static void WriteInteger(Stream stream, EbmlElementAttribute attr, ulong value)
     {
-        var t = child.GetType();
-        var a = t.GetCustomAttribute<EbmlElementAttribute>();
-        if (a == null) throw new InvalidOperationException("Child missing EbmlElement attribute");
-
-        using var ms = new MemoryStream();
-        WriteObjectContent(ms, child);
-        EbmlBinary.WriteElementHeader(s, a.Id, (ulong)ms.Length);
-        ms.Position = 0;
-        ms.CopyTo(s);
+        var bytes = UlongToMinimalBytes(value);
+        EbmlBinary.WriteElementHeader(stream, attr.Id, (ulong)bytes.Length);
+        stream.Write(bytes, 0, bytes.Length);
     }
 
+    private static void WriteFloat(Stream stream, EbmlElementAttribute attr, double value)
+    {
+        var bytes = BitConverter.GetBytes(value);
+        if (BitConverter.IsLittleEndian)
+            Array.Reverse(bytes);
+        EbmlBinary.WriteElementHeader(stream, attr.Id, (ulong)bytes.Length);
+        stream.Write(bytes, 0, bytes.Length);
+    }
+
+    private static void WriteString(Stream stream, EbmlElementAttribute attr, string value)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(value);
+        EbmlBinary.WriteElementHeader(stream, attr.Id, (ulong)bytes.Length);
+        stream.Write(bytes, 0, bytes.Length);
+    }
+
+    /// <summary>
+    /// Converts a ulong to the minimal number of big-endian bytes.
+    /// </summary>
     private static byte[] UlongToMinimalBytes(ulong v)
     {
-        if (v == 0) return new byte[] { 0x00 };
-        var tmp = new List<byte>();
-        while (v != 0)
+        Span<byte> tmp = stackalloc byte[8];
+        int len = 0;
+        do
         {
-            tmp.Add((byte)(v & 0xFF));
+            tmp[7 - len++] = (byte)(v & 0xFF);
             v >>= 8;
-        }
-        tmp.Reverse();
-        return tmp.ToArray();
+        } while (v != 0);
+        return tmp[^len..].ToArray();
     }
 }
