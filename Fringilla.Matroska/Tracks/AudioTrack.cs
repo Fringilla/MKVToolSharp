@@ -3,8 +3,8 @@
 [EbmlElement(0xE1, "Audio")]
 public sealed class AudioTrack : MatroskaElement
 {
-    public override string Name => "Audio";
-    public override ulong Id => 0xE1;
+    public override string ElementName => "Audio";
+    public override ulong ElementId => 0xE1;
 
     [EbmlElement(0xB5, "SamplingFrequency")]
     public double SamplingFrequency { get; set; }

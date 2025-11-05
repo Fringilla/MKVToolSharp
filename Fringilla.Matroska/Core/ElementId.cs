@@ -23,6 +23,10 @@ public static class ElementId
     // === Tracks ===
     public const ulong TrackEntry = 0xAE;
     public const ulong TrackNumber = 0xD7;
+    /// <summary>
+    /// A human-readable track name.
+    /// </summary>
+    public const ulong TrackName = 0x536E;
     public const ulong TrackType = 0x83;
     public const ulong CodecId = 0x86;
     public const ulong CodecName = 0x258688;

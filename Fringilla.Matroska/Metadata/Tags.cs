@@ -3,8 +3,8 @@
 [EbmlElement(0x1254C367, "Tags")]
 public sealed class Tags : MatroskaElement
 {
-    public override string Name => "Tags";
-    public override ulong Id => 0x1254C367;
+    public override string ElementName => "Tags";
+    public override ulong ElementId => 0x1254C367;
 
     [EbmlElement(0x7373, "Tag")]
     public List<Tag> Items { get; set; } = new();
@@ -13,8 +13,8 @@ public sealed class Tags : MatroskaElement
 [EbmlElement(0x7373, "Tag")]
 public sealed class Tag : MatroskaElement
 {
-    public override string Name => "Tag";
-    public override ulong Id => 0x7373;
+    public override string ElementName => "Tag";
+    public override ulong ElementId => 0x7373;
 
     [EbmlElement(0x63C0, "Targets")]
     public TagTarget? Target { get; set; }
@@ -26,8 +26,8 @@ public sealed class Tag : MatroskaElement
 [EbmlElement(0x63C0, "Targets")]
 public sealed class TagTarget : MatroskaElement
 {
-    public override string Name => "Targets";
-    public override ulong Id => 0x63C0;
+    public override string ElementName => "Targets";
+    public override ulong ElementId => 0x63C0;
 
     [EbmlElement(0x63C5, "TargetTypeValue")]
     public int? TargetTypeValue { get; set; }
@@ -51,8 +51,8 @@ public sealed class TagTarget : MatroskaElement
 [EbmlElement(0x67C8, "SimpleTag")]
 public sealed class SimpleTag : MatroskaElement
 {
-    public override string Name => "SimpleTag";
-    public override ulong Id => 0x67C8;
+    public override string ElementName => "SimpleTag";
+    public override ulong ElementId => 0x67C8;
 
     [EbmlElement(0x45A3, "TagName")]
     public string NameValue { get; set; } = string.Empty;

@@ -3,10 +3,10 @@
 [EbmlElement(0x1549A966, "Info")]
 public sealed class SegmentInfo : MatroskaElement
 {
-    public override string Name => "Info";
-    public override ulong Id => 0x1549A966;
+    public override string ElementName => "Info";
+    public override ulong ElementId => 0x1549A966;
 
-    [EbmlElement(0x2AD7B1, "TimecodeScale")]
+    [EbmlElement(Matroska.ElementId.TimecodeScale, "TimecodeScale")]
     public ulong TimecodeScale { get; set; } = 1000000;
 
     [EbmlElement(0x4489, "Duration")]

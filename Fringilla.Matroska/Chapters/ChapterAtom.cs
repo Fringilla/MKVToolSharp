@@ -3,8 +3,8 @@
 [EbmlElement(0xB6, "ChapterAtom")]
 public sealed class ChapterAtom : MatroskaElement
 {
-    public override string Name => "ChapterAtom";
-    public override ulong Id => 0xB6;
+    public override string ElementName => "ChapterAtom";
+    public override ulong ElementId => 0xB6;
 
     [EbmlElement(0x73C4, "ChapterUID")]
     public ulong Uid { get; set; }

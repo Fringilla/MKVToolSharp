@@ -38,18 +38,18 @@ public static class EbmlSerializer
     {
         var props = element.GetType()
             .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Select(p => new
-            {
-                Property = p,
-                Attribute = p.GetCustomAttribute<EbmlElementAttribute>()
-            })
+            .Select(p =>
+            (
+                Property: p,
+                Attribute: p.GetCustomAttribute<EbmlElementAttribute>()
+            ))
             .Where(x => x.Attribute != null)
             .OrderBy(x => x.Attribute!.Order)
             .ToList();
 
-        foreach (var (property, attr) in props)
+        foreach (var (prop, attr) in props)
         {
-            var val = property.GetValue(element);
+            var val = prop.GetValue(element);
             if (val is null)
                 continue;
 
@@ -96,10 +96,10 @@ public static class EbmlSerializer
 
                 // --- Nested EBML element ---
                 default:
-                    if (property.PropertyType.GetCustomAttribute<EbmlElementAttribute>() != null)
+                    if (prop.PropertyType.GetCustomAttribute<EbmlElementAttribute>() != null)
                         WriteMasterElement(stream, val);
                     else
-                        throw new NotSupportedException($"Unsupported property type: {property.PropertyType.FullName}");
+                        throw new NotSupportedException($"Unsupported property type: {prop.PropertyType.FullName}");
                     break;
             }
         }

@@ -3,8 +3,8 @@
 [EbmlElement(0x80, "ChapterDisplay")]
 public sealed class ChapterDisplay : MatroskaElement
 {
-    public override string Name => "ChapterDisplay";
-    public override ulong Id => 0x80;
+    public override string ElementName => "ChapterDisplay";
+    public override ulong ElementId => 0x80;
 
     [EbmlElement(0x85, "ChapString")]
     public string Text { get; set; } = string.Empty;

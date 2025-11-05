@@ -3,8 +3,8 @@
 [EbmlElement(0x61A7, "AttachedFile")]
 public sealed class AttachedFile : MatroskaElement
 {
-    public override string Name => "AttachedFile";
-    public override ulong Id => 0x61A7;
+    public override string ElementName => "AttachedFile";
+    public override ulong ElementId => 0x61A7;
 
     [EbmlElement(0x466E, "FileName")]
     public string FileName { get; set; } = string.Empty;

@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Buffers.Binary;
 
-internal static class EbmlBinary
+public static class EbmlBinary
 {
     // Encode VINT for size (returns bytes of VINT). Supports sizes up to 8 bytes.
     public static byte[] EncodeVInt(ulong value, int minLength = 1)

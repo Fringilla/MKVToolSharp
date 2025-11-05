@@ -1,32 +1,32 @@
 ﻿namespace Fringilla.Matroska;
 
-[EbmlElement(ElementId.Segment, "Segment")]
+[EbmlElement(Matroska.ElementId.Segment, "Segment")]
 public sealed class Segment : MatroskaElement
 {
-    public override string Name => "Segment";
-    public override ulong Id => ElementId.Segment;
+    public override string ElementName => "Segment";
+    public override ulong ElementId => Matroska.ElementId.Segment;
 
-    [EbmlElement(ElementId.Info, "Info")]
+    [EbmlElement(Matroska.ElementId.Info, "Info")]
     public SegmentInfo? Info { get; set; }
 
-    [EbmlElement(ElementId.Tracks, "Tracks")]
+    [EbmlElement(Matroska.ElementId.Tracks, "Tracks")]
     public List<TrackEntry> Tracks { get; set; } = new();
 
-    [EbmlElement(ElementId.Cluster, "Cluster")]
+    [EbmlElement(Matroska.ElementId.Cluster, "Cluster")]
     public List<Cluster> Clusters { get; set; } = new();
 
-    [EbmlElement(ElementId.SeekHead, "SeekHead")]
+    [EbmlElement(Matroska.ElementId.SeekHead, "SeekHead")]
     public SeekHead? SeekHead { get; set; }
 
-    [EbmlElement(ElementId.Cues, "Cues")]
+    [EbmlElement(Matroska.ElementId.Cues, "Cues")]
     public Cues? Cues { get; set; }
 
-    [EbmlElement(ElementId.Attachments, "Attachments")]
+    [EbmlElement(Matroska.ElementId.Attachments, "Attachments")]
     public Attachments? Attachments { get; set; }
 
-    [EbmlElement(ElementId.Chapters, "Chapters")]
+    [EbmlElement(Matroska.ElementId.Chapters, "Chapters")]
     public Chapters? Chapters { get; set; }
 
-    [EbmlElement(ElementId.Tags, "Tags")]
+    [EbmlElement(Matroska.ElementId.Tags, "Tags")]
     public Tags? Tags { get; set; }
 }
